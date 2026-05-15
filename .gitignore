@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+*.local
+.vite
+# Generated PWA icons (built from public/icon.svg during `npm run build`)
+public/icons/
