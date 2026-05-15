@@ -1,10 +1,14 @@
 // Sound + voice cues. The AudioContext is created lazily and resumed from a
-// user gesture (the START button) so it works under iOS Safari's autoplay rules.
+// user gesture (the START button) so it works under iOS Safari's autoplay
+// rules. A near-silent keep-alive node runs for the whole workout so iOS
+// doesn't suspend the context during quiet phases — otherwise the beep right
+// before "Work" gets dropped because resume() is async.
 type Tone = { freq: number; dur: number; type?: OscillatorType; gain?: number };
 
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private keepAlive: { osc: OscillatorNode; gain: GainNode } | null = null;
   enabled = true;
   voiceEnabled = false;
   volume = 0.8;
@@ -12,7 +16,8 @@ class AudioEngine {
   private ensure() {
     if (this.ctx) return this.ctx;
     const Ctx =
-      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.ctx = new Ctx();
     this.master = this.ctx.createGain();
     this.master.gain.value = this.volume;
@@ -20,16 +25,51 @@ class AudioEngine {
     return this.ctx;
   }
 
-  // Call from a user gesture before the workout starts.
+  private resume() {
+    if (this.ctx && this.ctx.state === "suspended") void this.ctx.resume();
+  }
+
+  // Keeps the audio hardware/route active so scheduled beeps fire on time
+  // even after a long silent phase (iOS would otherwise suspend the context).
+  private startKeepAlive() {
+    if (this.keepAlive) return;
+    const ctx = this.ensure();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = 60;
+    gain.gain.value = 0.0001; // inaudible but enough to keep the context awake
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    this.keepAlive = { osc, gain };
+  }
+
+  private stopKeepAlive() {
+    if (!this.keepAlive) return;
+    try {
+      this.keepAlive.osc.stop();
+      this.keepAlive.osc.disconnect();
+      this.keepAlive.gain.disconnect();
+    } catch {
+      /* already stopped */
+    }
+    this.keepAlive = null;
+  }
+
+  // Call from a user gesture (START tap) before the workout begins.
   async unlock() {
     const ctx = this.ensure();
     if (ctx.state === "suspended") await ctx.resume();
-    // Prime speech synthesis on iOS with a near-silent utterance.
+    this.startKeepAlive();
     if (this.voiceEnabled && "speechSynthesis" in window) {
-      const u = new SpeechSynthesisUtterance("");
+      const u = new SpeechSynthesisUtterance(" ");
       u.volume = 0;
       window.speechSynthesis.speak(u);
     }
+  }
+
+  // Call when the workout screen closes.
+  endSession() {
+    this.stopKeepAlive();
   }
 
   setVolume(v: number) {
@@ -40,8 +80,10 @@ class AudioEngine {
   private play(tones: Tone[]) {
     if (!this.enabled) return;
     const ctx = this.ensure();
-    if (ctx.state === "suspended") void ctx.resume();
-    let t = ctx.currentTime;
+    this.resume();
+    // Start a hair in the future so the first tone isn't clipped while the
+    // context finishes resuming.
+    let t = ctx.currentTime + 0.03;
     for (const tone of tones) {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
@@ -49,7 +91,7 @@ class AudioEngine {
       osc.frequency.setValueAtTime(tone.freq, t);
       const peak = (tone.gain ?? 1) * this.volume;
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), t + 0.012);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + 0.012);
       g.gain.exponentialRampToValueAtTime(0.0001, t + tone.dur);
       osc.connect(g).connect(this.master ?? ctx.destination);
       osc.start(t);
