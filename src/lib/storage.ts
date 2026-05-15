@@ -40,7 +40,7 @@ function write(key: string, value: unknown) {
 export const DEFAULT_SETTINGS: Settings = {
   sound: true,
   voice: false,
-  volume: 0.8,
+  volume: 1,
   countdownBeeps: true,
   keepAwake: true,
   theme: "system",

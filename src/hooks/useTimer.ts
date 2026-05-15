@@ -24,7 +24,10 @@ export function useTimer({ segments, settings, onComplete }: Options) {
   const [status, setStatus] = useState<Status>("idle");
   const [remaining, setRemaining] = useState(segments[0]?.duration ?? 0);
 
-  const endRef = useRef<number | null>(null); // performance.now() ms when segment ends
+  // Absolute wall-clock (Date.now) ms when the current segment ends. Using
+  // wall time (not performance.now) means that if iOS suspends the tab while
+  // backgrounded, the timer self-corrects to the right phase on return.
+  const endRef = useRef<number | null>(null);
   const remainingRef = useRef(segments[0]?.duration ?? 0);
   const beepRef = useRef(-1);
   const idxRef = useRef(0);
@@ -56,19 +59,19 @@ export function useTimer({ segments, settings, onComplete }: Options) {
     return Math.round(sum);
   }, []);
 
-  const enterSegment = useCallback((i: number, run: boolean, cue: boolean) => {
+  // Update visible phase (and optionally fire its sound cue). Does NOT touch
+  // the schedule (endRef) — scheduling stays absolute so background gaps and
+  // drift don't accumulate.
+  const showSegment = useCallback((i: number, cue: boolean) => {
     const seg = segsRef.current[i];
     if (!seg) return;
     idxRef.current = i;
     beepRef.current = -1;
-    remainingRef.current = seg.duration;
     setIdx(i);
-    setRemaining(seg.duration);
     if (cue) {
       audio.cue(seg.phase === "done" ? "cooldown" : seg.phase);
       audio.speak(voiceLabel[seg.phase]);
     }
-    endRef.current = run ? performance.now() + seg.duration * 1000 : null;
   }, []);
 
   const finish = useCallback(() => {
@@ -88,36 +91,72 @@ export function useTimer({ segments, settings, onComplete }: Options) {
 
   const tick = useCallback(() => {
     if (endRef.current == null) return;
-    const rem = (endRef.current - performance.now()) / 1000;
-    if (rem <= 0) {
-      const next = idxRef.current + 1;
-      if (next < segsRef.current.length) enterSegment(next, true, true);
-      else finish();
+    const now = Date.now();
+
+    if (now < endRef.current) {
+      const rem = (endRef.current - now) / 1000;
+      remainingRef.current = rem;
+      setRemaining(rem);
+      const s = Math.ceil(rem);
+      if (
+        settingsRef.current.countdownBeeps &&
+        s <= 3 &&
+        s >= 1 &&
+        s !== beepRef.current
+      ) {
+        beepRef.current = s;
+        audio.countdownTick();
+      }
       return;
     }
-    remainingRef.current = rem;
-    setRemaining(rem);
-    const secInt = Math.ceil(rem);
-    if (settingsRef.current.countdownBeeps && secInt <= 3 && secInt >= 1 && secInt !== beepRef.current) {
-      beepRef.current = secInt;
-      audio.countdownTick();
+
+    // Current segment ended. Advance — possibly across several segments if
+    // the app was backgrounded for a while — landing on the live one.
+    for (;;) {
+      const next = idxRef.current + 1;
+      if (next >= segsRef.current.length) {
+        finish();
+        return;
+      }
+      endRef.current += segsRef.current[next].duration * 1000;
+      const landed = Date.now() < endRef.current;
+      showSegment(next, landed);
+      if (landed) {
+        const rem = (endRef.current - Date.now()) / 1000;
+        remainingRef.current = rem;
+        setRemaining(rem);
+        return;
+      }
     }
-  }, [enterSegment, finish]);
+  }, [finish, showSegment]);
+
+  const tickFnRef = useRef(tick);
+  tickFnRef.current = tick;
 
   const startTick = useCallback(() => {
     clearTick();
-    tickRef.current = setInterval(tick, 100);
-  }, [clearTick, tick]);
+    tickRef.current = setInterval(() => tickFnRef.current(), 100);
+  }, [clearTick]);
 
   const start = useCallback(() => {
-    enterSegment(0, true, true);
+    const seg = segsRef.current[0];
+    idxRef.current = 0;
+    beepRef.current = -1;
+    remainingRef.current = seg?.duration ?? 0;
+    endRef.current = Date.now() + (seg?.duration ?? 0) * 1000;
+    setIdx(0);
+    setRemaining(seg?.duration ?? 0);
+    if (seg) {
+      audio.cue(seg.phase === "done" ? "cooldown" : seg.phase);
+      audio.speak(voiceLabel[seg.phase]);
+    }
     setStatus("running");
     startTick();
-  }, [enterSegment, startTick]);
+  }, [startTick]);
 
   const pause = useCallback(() => {
     if (endRef.current != null) {
-      remainingRef.current = Math.max(0, (endRef.current - performance.now()) / 1000);
+      remainingRef.current = Math.max(0, (endRef.current - Date.now()) / 1000);
       setRemaining(remainingRef.current);
     }
     endRef.current = null;
@@ -126,16 +165,21 @@ export function useTimer({ segments, settings, onComplete }: Options) {
   }, [clearTick]);
 
   const resume = useCallback(() => {
-    endRef.current = performance.now() + remainingRef.current * 1000;
+    endRef.current = Date.now() + remainingRef.current * 1000;
     setStatus("running");
     startTick();
   }, [startTick]);
 
   const stop = useCallback(() => {
     clearTick();
-    enterSegment(0, false, false);
+    endRef.current = null;
+    idxRef.current = 0;
+    beepRef.current = -1;
+    remainingRef.current = segsRef.current[0]?.duration ?? 0;
+    setIdx(0);
+    setRemaining(segsRef.current[0]?.duration ?? 0);
     setStatus("idle");
-  }, [clearTick, enterSegment]);
+  }, [clearTick]);
 
   const jump = useCallback(
     (delta: number) => {
@@ -144,11 +188,15 @@ export function useTimer({ segments, settings, onComplete }: Options) {
         Math.max(0, idxRef.current + delta),
       );
       if (target === idxRef.current) return;
-      const run = status === "running";
-      enterSegment(target, run, true);
-      if (run) startTick();
+      const seg = segsRef.current[target];
+      remainingRef.current = seg.duration;
+      setRemaining(seg.duration);
+      if (status === "running") {
+        endRef.current = Date.now() + seg.duration * 1000;
+      }
+      showSegment(target, true);
     },
-    [enterSegment, startTick, status],
+    [showSegment, status],
   );
 
   const toggle = useCallback(() => {
@@ -161,6 +209,18 @@ export function useTimer({ segments, settings, onComplete }: Options) {
   }, [status, pause, resume, stop, start]);
 
   useEffect(() => clearTick, [clearTick]);
+
+  // Resync immediately when returning to the app (don't wait for the next
+  // throttled interval) so the phase/time jump to where they should be.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && tickRef.current) {
+        tickFnRef.current();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   // Reset to the start when the workout definition changes while idle.
   useEffect(() => {
