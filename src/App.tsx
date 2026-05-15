@@ -127,12 +127,11 @@ export default function App() {
         )}
       </header>
 
-      <main className="content">
+      <main className={`content${view === "timer" ? " content--timer" : ""}`}>
         {view === "timer" && (
           <ConfigScreen
             config={config}
             onChange={setConfig}
-            onStart={start}
             onOpenPresets={() => setPresetsOpen(true)}
           />
         )}
@@ -148,29 +147,39 @@ export default function App() {
         )}
       </main>
 
-      <nav className="tabbar">
-        <button
-          className={`tab${view === "timer" ? " active" : ""}`}
-          onClick={() => setView("timer")}
-        >
-          <Icon.TimerTab />
-          Timer
-        </button>
-        <button
-          className={`tab${view === "history" ? " active" : ""}`}
-          onClick={() => setView("history")}
-        >
-          <Icon.HistoryTab />
-          History
-        </button>
-        <button
-          className={`tab${view === "settings" ? " active" : ""}`}
-          onClick={() => setView("settings")}
-        >
-          <Icon.SettingsTab />
-          Settings
-        </button>
-      </nav>
+      <div className="dock">
+        {view === "timer" && (
+          <div className="dock-start">
+            <button className="btn-primary" onClick={start}>
+              <Icon.Play style={{ width: 22, height: 22 }} />
+              START
+            </button>
+          </div>
+        )}
+        <nav className="tabbar">
+          <button
+            className={`tab${view === "timer" ? " active" : ""}`}
+            onClick={() => setView("timer")}
+          >
+            <Icon.TimerTab />
+            Timer
+          </button>
+          <button
+            className={`tab${view === "history" ? " active" : ""}`}
+            onClick={() => setView("history")}
+          >
+            <Icon.HistoryTab />
+            History
+          </button>
+          <button
+            className={`tab${view === "settings" ? " active" : ""}`}
+            onClick={() => setView("settings")}
+          >
+            <Icon.SettingsTab />
+            Settings
+          </button>
+        </nav>
+      </div>
 
       {running && (
         <RunScreen
