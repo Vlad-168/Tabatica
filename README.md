@@ -31,17 +31,17 @@ npm run build    # production build into dist/ (also regenerates PWA icons)
 
 ## Deploying to GitHub Pages
 
-A workflow (`.github/workflows/deploy.yml`) builds and deploys on every push.
-**One-time setup:** in the repo, go to **Settings → Pages → Build and
-deployment → Source** and choose **GitHub Actions**. After the next push the
-app is live at:
+A workflow (`.github/workflows/deploy.yml`) builds and deploys on every push
+to the default branch and self-enables Pages. Once it runs, the app is live at
+(note the repo-name casing):
 
 ```
-https://vlad-168.github.io/tabatica/
+https://vlad-168.github.io/Tabatica/
 ```
 
-> The Vite `base` is `/tabatica/` to match the repo name. If the repo is
-> renamed, update `base` in `vite.config.ts`.
+> The Vite production `base` is `./` (relative), so assets resolve correctly
+> no matter the path or casing the site is served from — no change needed if
+> the repo is renamed or hosted elsewhere.
 
 ## Install on iPhone
 

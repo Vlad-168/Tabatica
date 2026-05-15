@@ -1,10 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Project is served from https://<user>.github.io/tabatica/ on GitHub Pages,
-// so the production base must match the repo name. Dev server stays at "/".
+// GitHub Pages serves a project site under the (case-sensitive) repo name.
+// A relative base makes every asset path work regardless of the path/case
+// the app is served from. Dev server stays absolute at "/".
 export default defineConfig(({ command }) => ({
-  base: command === "build" ? "/tabatica/" : "/",
+  base: command === "build" ? "./" : "/",
   plugins: [react()],
   build: {
     target: "es2020",
