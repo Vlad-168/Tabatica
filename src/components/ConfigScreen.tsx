@@ -6,7 +6,6 @@ import { formatClock } from "../lib/format";
 interface Props {
   config: WorkoutConfig;
   onChange: (c: WorkoutConfig) => void;
-  onStart: () => void;
   onOpenPresets: () => void;
 }
 
@@ -14,7 +13,7 @@ function grad(c: string, c2: string) {
   return `linear-gradient(135deg, var(${c}), var(${c2}))`;
 }
 
-export function ConfigScreen({ config, onChange, onStart, onOpenPresets }: Props) {
+export function ConfigScreen({ config, onChange, onOpenPresets }: Props) {
   const set = <K extends keyof WorkoutConfig>(k: K, v: WorkoutConfig[K]) =>
     onChange({ ...config, [k]: v });
 
@@ -116,11 +115,6 @@ export function ConfigScreen({ config, onChange, onStart, onOpenPresets }: Props
       <button className="btn-ghost" onClick={onOpenPresets}>
         <Icon.Save />
         Presets & saved workouts
-      </button>
-
-      <button className="btn-primary pop" onClick={onStart}>
-        <Icon.Play style={{ width: 22, height: 22 }} />
-        START
       </button>
     </>
   );
