@@ -100,35 +100,40 @@ class AudioEngine {
     }
   }
 
+  // Frequencies sit in the 0.8–1.5 kHz band where hearing is most sensitive,
+  // with square/triangle waves and high gain so cues cut through during a
+  // workout (and over a phone speaker).
   countdownTick() {
-    this.play([{ freq: 760, dur: 0.12, type: "triangle", gain: 0.5 }]);
+    this.play([{ freq: 1000, dur: 0.16, type: "square", gain: 0.95 }]);
   }
 
   cue(phase: "work" | "rest" | "restset" | "prepare" | "cooldown") {
     if (phase === "work") {
+      // Loud rising double-blast — unmistakable "go".
       this.play([
-        { freq: 660, dur: 0.12, type: "square", gain: 0.45 },
-        { freq: 990, dur: 0.22, type: "square", gain: 0.5 },
+        { freq: 780, dur: 0.16, type: "square", gain: 0.95 },
+        { freq: 1240, dur: 0.34, type: "square", gain: 1 },
       ]);
     } else if (phase === "cooldown") {
       this.play([
-        { freq: 520, dur: 0.16, type: "sine", gain: 0.5 },
-        { freq: 392, dur: 0.26, type: "sine", gain: 0.5 },
+        { freq: 720, dur: 0.2, type: "triangle", gain: 0.85 },
+        { freq: 480, dur: 0.34, type: "triangle", gain: 0.85 },
       ]);
     } else {
+      // Rest / prepare / set break — clear descending two-tone.
       this.play([
-        { freq: 440, dur: 0.16, type: "sine", gain: 0.5 },
-        { freq: 330, dur: 0.24, type: "sine", gain: 0.5 },
+        { freq: 940, dur: 0.18, type: "triangle", gain: 0.9 },
+        { freq: 620, dur: 0.3, type: "triangle", gain: 0.9 },
       ]);
     }
   }
 
   finish() {
     this.play([
-      { freq: 523, dur: 0.16, type: "triangle", gain: 0.5 },
-      { freq: 659, dur: 0.16, type: "triangle", gain: 0.5 },
-      { freq: 784, dur: 0.16, type: "triangle", gain: 0.5 },
-      { freq: 1047, dur: 0.4, type: "triangle", gain: 0.55 },
+      { freq: 660, dur: 0.18, type: "triangle", gain: 0.9 },
+      { freq: 880, dur: 0.18, type: "triangle", gain: 0.9 },
+      { freq: 1175, dur: 0.18, type: "triangle", gain: 0.95 },
+      { freq: 1568, dur: 0.5, type: "triangle", gain: 1 },
     ]);
   }
 
