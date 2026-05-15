@@ -65,6 +65,11 @@ export function SettingsScreen({ settings, onChange }: Props) {
             }}
           />
         </div>
+        <div className="note">
+          On iPhone, the physical <b>Ring/Silent</b> switch also mutes the app’s
+          sound. If you hear nothing, flip it off (no orange) and tap the volume
+          slider above to test.
+        </div>
       </div>
 
       <div className="section-label">Workout</div>

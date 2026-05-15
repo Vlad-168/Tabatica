@@ -3,6 +3,7 @@ import { useTimer } from "../hooks/useTimer";
 import { useWakeLock } from "../hooks/useWakeLock";
 import type { Segment, Settings } from "../types";
 import { formatClock, formatDuration } from "../lib/format";
+import { audio } from "../lib/audio";
 import * as Icon from "./icons";
 
 interface Props {
@@ -36,6 +37,7 @@ export function RunScreen({ segments, settings, name, onClose, onComplete }: Pro
     if (settings.keepAwake) void wake.acquire();
     return () => {
       void wake.release();
+      audio.endSession();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
