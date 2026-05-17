@@ -91,7 +91,21 @@ await page.addStyleTag({
   #endcard .u{font:700 14px/1 -apple-system,system-ui,sans-serif;color:#fff;
     background:rgba(255,255,255,.16);padding:8px 13px;border-radius:9px;margin-top:5px}
   #endcard .cr{font:600 12px/1 -apple-system,system-ui,sans-serif;
-    color:rgba(255,255,255,.78);margin-top:16px;letter-spacing:.02em}`,
+    color:rgba(255,255,255,.78);margin-top:16px;letter-spacing:.02em}
+  #intro{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;
+    background:linear-gradient(160deg,#5b5bf0,#3b2f9e);transition:opacity .55s ease}
+  #intro.out{opacity:0;pointer-events:none}
+  #intro img{width:110px;height:110px;border-radius:26px;
+    box-shadow:0 20px 44px -10px rgba(15,15,60,.65);
+    opacity:0;transform:scale(.78);animation:lgo .6s cubic-bezier(.22,1,.36,1) .15s both}
+  #intro h1{font:900 42px/1 -apple-system,system-ui,sans-serif;color:#fff;margin:0;
+    letter-spacing:-.02em;opacity:0;transform:translateY(14px);
+    animation:ttl .55s cubic-bezier(.22,1,.36,1) .38s both}
+  #intro p{font:700 15px/1 -apple-system,system-ui,sans-serif;color:#dfe1ff;margin:0;
+    opacity:0;transform:translateY(12px);animation:ttl .55s cubic-bezier(.22,1,.36,1) .52s both}
+  @keyframes lgo{to{opacity:1;transform:none}}
+  @keyframes ttl{to{opacity:1;transform:none}}`,
 });
 await page.evaluate(() => {
   const mk = (id, html) => {
@@ -103,6 +117,10 @@ await page.evaluate(() => {
   };
   mk("cap", '<div class="b"></div>');
   mk("fx", "");
+  mk(
+    "intro",
+    '<img src="/icon.svg" alt=""><h1>Tabatica</h1><p>Tabata / HIIT timer</p>',
+  );
   mk(
     "endcard",
     '<h1>Tabatica</h1><p>Free Tabata / HIIT timer<br>Works offline · No App Store</p>' +
@@ -155,8 +173,13 @@ const wipe = async (fn) => {
   await wait(360);
 };
 
+// ---- Intro: logo + name (~1.8s) ----
+await wait(1800);
+await page.evaluate(() => document.getElementById("intro").classList.add("out"));
+await wait(650);
+
 // ---- Scene 1: config ----
-await wait(550);
+await wait(250);
 await cap("Your Tabata timer — upgraded");
 await wait(2000);
 await page.locator(".row", { hasText: "Work" }).first().locator('button[aria-label="increase"]').click();
