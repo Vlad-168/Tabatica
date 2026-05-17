@@ -5,3 +5,5 @@ dist
 .vite
 # Generated PWA icons (built from public/icon.svg during `npm run build`)
 public/icons/
+# Generated demo/marketing video artifacts
+*.mp4
