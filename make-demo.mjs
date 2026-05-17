@@ -66,9 +66,9 @@ await page.addStyleTag({
   @keyframes appin{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
   #cap{position:fixed;left:0;right:0;bottom:64px;z-index:99999;display:flex;
     justify-content:center;pointer-events:none;padding:0 16px}
-  #cap .b{font:800 16px/1.25 -apple-system,system-ui,sans-serif;color:#fff;
-    text-align:center;background:linear-gradient(135deg,#5b5bf0,#4338ca);
-    padding:9px 15px;border-radius:13px;box-shadow:0 10px 24px -8px rgba(20,20,70,.7);
+  #cap .b{font:800 16px/1.25 -apple-system,system-ui,sans-serif;color:#171933;
+    text-align:center;background:#fff;border:1px solid rgba(0,0,0,.06);
+    padding:10px 16px;border-radius:13px;box-shadow:0 12px 30px -8px rgba(0,0,0,.5);
     opacity:0;transform:translateY(14px) scale(.94);
     transition:opacity .42s ease,transform .42s cubic-bezier(.22,1,.36,1);max-width:92%}
   #cap.show .b{opacity:1;transform:none}
@@ -85,10 +85,13 @@ await page.addStyleTag({
   #endcard.show h1{transition-delay:.15s}
   #endcard.show p{transition-delay:.3s}
   #endcard.show .u{transition-delay:.45s}
+  #endcard.show .cr{transition-delay:.62s}
   #endcard h1{font:900 40px/1 -apple-system,system-ui,sans-serif;color:#fff;margin:0;letter-spacing:-.02em}
   #endcard p{font:700 16px/1.35 -apple-system,system-ui,sans-serif;color:#dfe1ff;margin:0;text-align:center}
   #endcard .u{font:700 14px/1 -apple-system,system-ui,sans-serif;color:#fff;
-    background:rgba(255,255,255,.16);padding:8px 13px;border-radius:9px;margin-top:5px}`,
+    background:rgba(255,255,255,.16);padding:8px 13px;border-radius:9px;margin-top:5px}
+  #endcard .cr{font:600 12px/1 -apple-system,system-ui,sans-serif;
+    color:rgba(255,255,255,.78);margin-top:16px;letter-spacing:.02em}`,
 });
 await page.evaluate(() => {
   const mk = (id, html) => {
@@ -103,7 +106,8 @@ await page.evaluate(() => {
   mk(
     "endcard",
     '<h1>Tabatica</h1><p>Free Tabata / HIIT timer<br>Works offline · No App Store</p>' +
-      '<div class="u">Add to Home Screen → train</div>',
+      '<div class="u">Add to Home Screen → train</div>' +
+      '<div class="cr">Developed by Vladislav Groshkov</div>',
   );
   window.__cap = (t) => {
     const c = document.getElementById("cap");
