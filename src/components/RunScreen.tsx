@@ -71,6 +71,9 @@ export function RunScreen({ segments, settings, name, onClose, onComplete }: Pro
         ? `Set ${seg.set}/${seg.totalSets} done`
         : "";
 
+  const showCycle = !!seg && (seg.phase === "work" || seg.phase === "rest");
+  const showSet = !!seg && seg.totalSets > 1 && seg.phase !== "prepare" && seg.phase !== "cooldown";
+
   const finishStats = useMemo(() => {
     const work = segments
       .filter((s) => s.phase === "work")
@@ -129,7 +132,27 @@ export function RunScreen({ segments, settings, name, onClose, onComplete }: Pro
         <>
           <div className="run-phase">
             <div className="phase-name">{seg?.label ?? "Ready"}</div>
-            <div className="phase-sub">{seg?.description || meta}</div>
+            {(showCycle || showSet) && (
+              <div className="phase-meta">
+                {showCycle && (
+                  <div className="meta-chip">
+                    <div className="num">
+                      {seg!.cycle}<span className="sl">/</span>{seg!.totalCycles}
+                    </div>
+                    <div className="lbl">Cycle</div>
+                  </div>
+                )}
+                {showSet && (
+                  <div className="meta-chip">
+                    <div className="num">
+                      {seg!.set}<span className="sl">/</span>{seg!.totalSets}
+                    </div>
+                    <div className="lbl">Set</div>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="phase-sub">{seg?.description || (!showCycle && !showSet ? meta : "")}</div>
           </div>
 
           <div className="dial-wrap">
