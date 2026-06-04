@@ -29,15 +29,12 @@ type WebkitVideo = HTMLVideoElement & {
 
 export class PipTimer {
   static supported(): boolean {
-    if (typeof document === "undefined") return false;
-    const v = document.createElement("video") as WebkitVideo;
-    if (typeof v.webkitSupportsPresentationMode === "function") {
-      try {
-        return v.webkitSupportsPresentationMode("picture-in-picture");
-      } catch {
-        return false;
-      }
-    }
+    if (typeof document === "undefined" || typeof HTMLVideoElement === "undefined") return false;
+    // iOS Safari: presence of the webkit presentation-mode API on the
+    // HTMLVideoElement prototype is the most reliable signal (calling it
+    // on a sourceless element can return false even when PiP is available).
+    if ("webkitSupportsPresentationMode" in HTMLVideoElement.prototype) return true;
+    // Standard PiP API (Chrome, desktop Safari, modern Edge).
     return document.pictureInPictureEnabled === true;
   }
 
