@@ -58,25 +58,8 @@ export default function App() {
     else root.setAttribute("data-theme", settings.theme);
   }, [settings.theme]);
 
-  // Analytics session + ?admin=1 toggle (persists to localStorage so the
-  // Admin section shows in Settings; ?admin=0 turns it off).
   useEffect(() => {
     initSessionTracking();
-    try {
-      const url = new URL(window.location.href);
-      const admin = url.searchParams.get("admin");
-      if (admin === "1") {
-        localStorage.setItem("tabatica.admin", "1");
-        url.searchParams.delete("admin");
-        window.history.replaceState({}, "", url.toString());
-      } else if (admin === "0") {
-        localStorage.removeItem("tabatica.admin");
-        url.searchParams.delete("admin");
-        window.history.replaceState({}, "", url.toString());
-      }
-    } catch {
-      /* non-fatal */
-    }
   }, []);
 
   const segments = useMemo(() => buildTimeline(config), [config]);
