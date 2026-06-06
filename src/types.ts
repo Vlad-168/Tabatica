@@ -49,5 +49,4 @@ export interface Settings {
   countdownBeeps: boolean;
   keepAwake: boolean;
   theme: "system" | "light" | "dark";
-  experimentalPip: boolean;
 }

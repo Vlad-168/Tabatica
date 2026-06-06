@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useTimer } from "../hooks/useTimer";
 import { useWakeLock } from "../hooks/useWakeLock";
 import type { Segment, Settings } from "../types";
 import { formatClock, formatDuration } from "../lib/format";
 import { audio } from "../lib/audio";
-import { PipTimer } from "../lib/pipTimer";
 import * as Icon from "./icons";
 
 interface Props {
@@ -33,18 +32,12 @@ export function RunScreen({ segments, settings, name, onClose, onComplete }: Pro
   const t = useTimer({ segments, settings, onComplete });
   const wake = useWakeLock();
 
-  const pipRef = useRef<PipTimer | null>(null);
-  const [pipAvailable] = useState(() => settings.experimentalPip && PipTimer.supported());
-
   useEffect(() => {
     t.start();
     if (settings.keepAwake) void wake.acquire();
-    if (pipAvailable) pipRef.current = new PipTimer();
     return () => {
       void wake.release();
       audio.endSession();
-      pipRef.current?.destroy();
-      pipRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -81,20 +74,6 @@ export function RunScreen({ segments, settings, name, onClose, onComplete }: Pro
   const showCycle = !!seg && (seg.phase === "work" || seg.phase === "rest");
   const showSet = !!seg && seg.totalSets > 1 && seg.phase !== "prepare" && seg.phase !== "cooldown";
 
-  // Mirror the live timer state into the PiP canvas every render.
-  useEffect(() => {
-    pipRef.current?.update({
-      phase: t.finished ? "done" : seg?.phase ?? "work",
-      phaseLabel: (t.finished ? "Done" : seg?.label ?? "Ready").toUpperCase(),
-      timeText: formatClock(showSecs),
-      meta: showCycle && seg
-        ? `Cycle ${seg.cycle}/${seg.totalCycles}${showSet ? ` · Set ${seg.set}/${seg.totalSets}` : ""}`
-        : showSet && seg
-          ? `Set ${seg.set}/${seg.totalSets}`
-          : "",
-    });
-  });
-
   const finishStats = useMemo(() => {
     const work = segments
       .filter((s) => s.phase === "work")
@@ -113,19 +92,7 @@ export function RunScreen({ segments, settings, name, onClose, onComplete }: Pro
           <Icon.Close />
         </button>
         <div className="run-meta">{name}</div>
-        {pipAvailable ? (
-          <button
-            className="run-close"
-            onClick={() => {
-              pipRef.current?.enter().catch(() => undefined);
-            }}
-            aria-label="picture-in-picture"
-          >
-            <Icon.Pip />
-          </button>
-        ) : (
-          <div style={{ width: 42 }} />
-        )}
+        <div style={{ width: 42 }} />
       </div>
 
       {t.finished ? (

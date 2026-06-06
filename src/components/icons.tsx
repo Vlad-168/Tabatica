@@ -124,12 +124,6 @@ export const Check = (p: P) => (
     <path d="M20 6L9 17l-5-5" />
   </svg>
 );
-export const Pip = (p: P) => (
-  <svg {...base(p)}>
-    <rect x="2.5" y="4" width="19" height="15" rx="2.5" />
-    <rect x="11" y="11" width="9" height="6.5" rx="1" fill="currentColor" />
-  </svg>
-);
 export const Flame = (p: P) => (
   <svg {...base(p)} fill="currentColor" stroke="none">
     <path d="M12 2c1 3-1 5-2 6-1.5 1.5-3 3-3 6a5 5 0 0 0 10 0c0-2-1-3.5-1-3.5.5 1 .5 3-1 3 0-3-2-4-2-5.5C12 6 13 4 12 2z" />
