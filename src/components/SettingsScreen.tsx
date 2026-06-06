@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import type { Settings } from "../types";
 import { audio } from "../lib/audio";
+import { deviceInfo, pwaMode } from "../lib/analytics";
 
 interface Props {
   settings: Settings;
@@ -14,9 +16,23 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   );
 }
 
+const UMAMI_DASHBOARD =
+  "https://cloud.umami.is/websites/76e4a2ec-48bd-4017-afad-e5170f0c9640";
+
 export function SettingsScreen({ settings, onChange }: Props) {
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) =>
     onChange({ ...settings, [k]: v });
+  const isAdmin = useMemo(() => {
+    try {
+      return localStorage.getItem("tabatica.admin") === "1";
+    } catch {
+      return false;
+    }
+  }, []);
+  const env = useMemo(() => {
+    const info = deviceInfo();
+    return { mode: pwaMode(), ...info };
+  }, []);
 
   return (
     <>
@@ -112,6 +128,38 @@ export function SettingsScreen({ settings, onChange }: Props) {
           like a native app, fully offline.
         </div>
       </div>
+
+      {isAdmin && (
+        <>
+          <div className="section-label">Admin</div>
+          <div className="card">
+            <div className="set-row">
+              <div className="set-main">
+                <div className="set-title">Analytics dashboard</div>
+                <div className="set-sub">Open Umami in a new tab</div>
+              </div>
+              <button
+                className="icon-btn apply"
+                onClick={() => window.open(UMAMI_DASHBOARD, "_blank", "noopener,noreferrer")}
+                aria-label="open dashboard"
+              >
+                ↗
+              </button>
+            </div>
+            <div className="set-row">
+              <div className="set-main">
+                <div className="set-title">This device</div>
+                <div className="set-sub">
+                  {env.platform} · {env.browser} · {env.mode}
+                </div>
+              </div>
+            </div>
+            <div className="note">
+              Append <b>?admin=0</b> to the URL once to hide this section again.
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="note" style={{ textAlign: "center", opacity: 0.7 }}>
         Tabatica · interval training timer
