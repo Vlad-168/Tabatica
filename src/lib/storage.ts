@@ -44,7 +44,6 @@ export const DEFAULT_SETTINGS: Settings = {
   countdownBeeps: true,
   keepAwake: true,
   theme: "system",
-  experimentalPip: false,
 };
 
 export const loadConfig = (): WorkoutConfig => read(KEYS.config, DEFAULT_CONFIG);

@@ -100,23 +100,6 @@ export function SettingsScreen({ settings, onChange }: Props) {
         </div>
       </div>
 
-      <div className="section-label">Experimental</div>
-      <div className="card">
-        <div className="set-row">
-          <div className="set-main">
-            <div className="set-title">Picture-in-Picture (Beta)</div>
-            <div className="set-sub">
-              Floating timer over other apps. Tap the new PiP button on the run
-              screen. Works best in iOS Safari; lock screen may pause audio.
-            </div>
-          </div>
-          <Toggle
-            on={settings.experimentalPip}
-            onClick={() => set("experimentalPip", !settings.experimentalPip)}
-          />
-        </div>
-      </div>
-
       <div className="section-label">Apple Health</div>
       <div className="card">
         <div className="note">
