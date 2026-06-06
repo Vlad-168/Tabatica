@@ -19,6 +19,7 @@ import {
 } from "./lib/storage";
 import { buildTimeline, totalDuration, workDuration } from "./lib/timeline";
 import { formatClock } from "./lib/format";
+import { track } from "./lib/analytics";
 import type { HistoryEntry, Preset, Settings, WorkoutConfig } from "./types";
 
 type View = "timer" | "history" | "settings";
@@ -70,6 +71,14 @@ export default function App() {
     audio.voiceEnabled = settings.voice;
     audio.setVolume(settings.volume);
     void audio.unlock();
+    track("workout_started", {
+      preset: workoutName,
+      work: config.work,
+      rest: config.rest,
+      cycles: config.cycles,
+      sets: config.sets,
+      totalSeconds: total,
+    });
     setRunning(true);
   };
 
@@ -86,6 +95,14 @@ export default function App() {
       completed,
     };
     setHistory((h) => [entry, ...h]);
+    track("workout_completed", {
+      preset: workoutName,
+      completed,
+      activeSeconds,
+      totalSeconds: total,
+      cycles: config.cycles,
+      sets: config.sets,
+    });
   };
 
   const savePreset = (name: string) => {

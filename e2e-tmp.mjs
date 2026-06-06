@@ -16,7 +16,8 @@ ctx.setDefaultTimeout(9000);
 const errors = [];
 const page = await ctx.newPage();
 page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+const isExternalNoise = (s) => /umami\.is|Failed to load resource/.test(s);
+page.on("console", (m) => { if (m.type() === "error" && !isExternalNoise(m.text())) errors.push("console: " + m.text()); });
 
 // ---- 1. Load & render ----
 await page.goto(BASE, { waitUntil: "networkidle" });
@@ -67,7 +68,7 @@ ok(numsT[0] === "04:00" && numsT[1] === "16", `Classic Tabata applied (total ${n
 // ---- 6. Full workout run + history saved ----
 const run = await ctx.newPage();
 run.on("pageerror", (e) => errors.push("pageerror(run): " + e.message));
-run.on("console", (m) => { if (m.type() === "error") errors.push("console(run): " + m.text()); });
+run.on("console", (m) => { if (m.type() === "error" && !isExternalNoise(m.text())) errors.push("console(run): " + m.text()); });
 await run.addInitScript(() => {
   localStorage.setItem("tabatica.config", JSON.stringify({
     prepare: 1, work: 1, rest: 0, cycles: 1, sets: 1,
