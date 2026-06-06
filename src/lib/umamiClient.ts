@@ -25,7 +25,7 @@ interface BaseOpts {
 
 async function call<T>(path: string, apiKey: string): Promise<T> {
   const res = await fetch(`${API_BASE}/websites/${WEBSITE_ID}${path}`, {
-    headers: { "x-api-key": apiKey, accept: "application/json" },
+    headers: { "x-umami-api-key": apiKey, accept: "application/json" },
   });
   if (!res.ok) {
     let detail = "";
