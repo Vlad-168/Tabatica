@@ -3,6 +3,7 @@ import type { Preset, WorkoutConfig } from "../types";
 import { DEFAULT_CONFIG } from "../lib/timeline";
 import { formatClock } from "../lib/format";
 import { buildTimeline, totalDuration } from "../lib/timeline";
+import { track } from "../lib/analytics";
 import * as Icon from "./icons";
 
 interface Props {
@@ -85,6 +86,7 @@ export function PresetsSheet({ presets, current, onApply, onSave, onDelete, onCl
                 <button
                   className="icon-btn apply"
                   onClick={() => {
+                    track("preset_applied", { name: p.name, source: "saved" });
                     onApply(p.config);
                     onClose();
                   }}
@@ -107,6 +109,7 @@ export function PresetsSheet({ presets, current, onApply, onSave, onDelete, onCl
             <button
               className="icon-btn apply"
               onClick={() => {
+                track("preset_applied", { name: tpl.name, source: "template" });
                 onApply(tpl.config);
                 onClose();
               }}
