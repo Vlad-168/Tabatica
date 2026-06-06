@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { Settings } from "../types";
 import { audio } from "../lib/audio";
 import { deviceInfo, pwaMode } from "../lib/analytics";
+import { checkPasscode } from "../lib/adminPasscode";
 import { AdminDashboard } from "./AdminDashboard";
 
 interface Props {
@@ -23,13 +24,52 @@ const UMAMI_DASHBOARD =
 export function SettingsScreen({ settings, onChange }: Props) {
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) =>
     onChange({ ...settings, [k]: v });
-  const isAdmin = useMemo(() => {
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     try {
       return localStorage.getItem("tabatica.admin") === "1";
     } catch {
       return false;
     }
-  }, []);
+  });
+  const tapsRef = useRef<number[]>([]);
+  const [prompt, setPrompt] = useState(false);
+  const [pcInput, setPcInput] = useState("");
+  const [pcWrong, setPcWrong] = useState(false);
+  const grantAdmin = (on: boolean) => {
+    try {
+      if (on) localStorage.setItem("tabatica.admin", "1");
+      else localStorage.removeItem("tabatica.admin");
+    } catch {
+      /* private mode — non-fatal */
+    }
+    setIsAdmin(on);
+  };
+  const onFooterTap = () => {
+    const now = Date.now();
+    tapsRef.current = tapsRef.current.filter((t) => now - t < 2500);
+    tapsRef.current.push(now);
+    if (tapsRef.current.length >= 7) {
+      tapsRef.current = [];
+      if (isAdmin) grantAdmin(false);
+      else {
+        setPcInput("");
+        setPcWrong(false);
+        setPrompt(true);
+      }
+    }
+  };
+  const tryUnlock = async () => {
+    const ok = await checkPasscode(pcInput);
+    if (ok) {
+      grantAdmin(true);
+      setPrompt(false);
+      setPcInput("");
+      setPcWrong(false);
+    } else {
+      setPcInput("");
+      setPcWrong(true);
+    }
+  };
   const env = useMemo(() => {
     const info = deviceInfo();
     return { mode: pwaMode(), ...info };
@@ -217,9 +257,43 @@ export function SettingsScreen({ settings, onChange }: Props) {
         </>
       )}
 
-      <div className="note" style={{ textAlign: "center", opacity: 0.7 }}>
+      <div
+        className="note"
+        style={{ textAlign: "center", opacity: 0.7, userSelect: "none", WebkitTapHighlightColor: "transparent" }}
+        onClick={onFooterTap}
+      >
         Tabatica · interval training timer
       </div>
+
+      {prompt && (
+        <div className="sheet-backdrop" onClick={() => setPrompt(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-grip" />
+            <h3>Enter passcode</h3>
+            <div className="field">
+              <input
+                type="password"
+                autoFocus
+                value={pcInput}
+                placeholder="Passcode"
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => {
+                  setPcInput(e.target.value);
+                  if (pcWrong) setPcWrong(false);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && void tryUnlock()}
+              />
+              <button onClick={() => void tryUnlock()}>Unlock</button>
+            </div>
+            {pcWrong && (
+              <div className="note" style={{ color: "#ef4444", padding: "0 4px 4px" }}>
+                Incorrect
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
