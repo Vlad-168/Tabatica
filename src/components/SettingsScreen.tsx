@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Settings } from "../types";
 import { audio } from "../lib/audio";
 import { deviceInfo, pwaMode } from "../lib/analytics";
+import { AdminDashboard } from "./AdminDashboard";
 
 interface Props {
   settings: Settings;
@@ -33,6 +34,33 @@ export function SettingsScreen({ settings, onChange }: Props) {
     const info = deviceInfo();
     return { mode: pwaMode(), ...info };
   }, []);
+  const [apiKey, setApiKey] = useState<string>(() => {
+    try {
+      return localStorage.getItem("tabatica.umamiApiKey") ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const [keyInput, setKeyInput] = useState("");
+  const saveKey = () => {
+    const v = keyInput.trim();
+    if (!v) return;
+    try {
+      localStorage.setItem("tabatica.umamiApiKey", v);
+    } catch {
+      /* ignore */
+    }
+    setApiKey(v);
+    setKeyInput("");
+  };
+  const clearKey = () => {
+    try {
+      localStorage.removeItem("tabatica.umamiApiKey");
+    } catch {
+      /* ignore */
+    }
+    setApiKey("");
+  };
 
   return (
     <>
@@ -135,8 +163,8 @@ export function SettingsScreen({ settings, onChange }: Props) {
           <div className="card">
             <div className="set-row">
               <div className="set-main">
-                <div className="set-title">Analytics dashboard</div>
-                <div className="set-sub">Open Umami in a new tab</div>
+                <div className="set-title">Open Umami</div>
+                <div className="set-sub">Full dashboard in a new tab</div>
               </div>
               <button
                 className="icon-btn apply"
@@ -158,6 +186,34 @@ export function SettingsScreen({ settings, onChange }: Props) {
               Append <b>?admin=0</b> to the URL once to hide this section again.
             </div>
           </div>
+
+          {apiKey ? (
+            <AdminDashboard apiKey={apiKey} onClearKey={clearKey} />
+          ) : (
+            <div className="card">
+              <div className="set-row">
+                <div className="set-main">
+                  <div className="set-title">In-app stats</div>
+                  <div className="set-sub">
+                    Paste a Umami API key (Profile → API Keys on cloud.umami.is) to
+                    show a 7-day summary here. Key is stored only on this device.
+                  </div>
+                </div>
+              </div>
+              <div className="field" style={{ padding: "0 16px 14px" }}>
+                <input
+                  type="password"
+                  value={keyInput}
+                  placeholder="Umami API key…"
+                  autoComplete="off"
+                  spellCheck={false}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveKey()}
+                />
+                <button onClick={saveKey}>Save</button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
